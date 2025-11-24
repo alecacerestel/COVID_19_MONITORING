@@ -1,0 +1,52 @@
+# Configuration file for COVID-19 Data Quality Monitoring System
+
+# Data Source Configuration
+data_source:
+  url: "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv"
+  download_timeout: 300
+  
+# File Paths
+paths:
+  raw_data: "data/raw"
+  validated_data: "data/validated"
+  quarantine_data: "data/quarantine"
+  logs: "logs"
+  
+# Great Expectations Configuration
+validation:
+  checkpoint_name: "covid_data_checkpoint"
+  expectation_suite_name: "covid_data_quality_suite"
+  
+# Alert Configuration
+alerts:
+  enabled: true
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    sender: "your-email@gmail.com"
+    recipients:
+      - "recipient1@example.com"
+    password_env_var: "EMAIL_PASSWORD"
+  slack:
+    enabled: false
+    webhook_url_env_var: "SLACK_WEBHOOK_URL"
+    
+# Database Configuration (Optional)
+database:
+  enabled: false
+  type: "duckdb"  # Options: duckdb, bigquery
+  duckdb:
+    path: "data/covid19_validated.duckdb"
+    table_name: "covid_data"
+  bigquery:
+    project_id: "your-project-id"
+    dataset_id: "covid19"
+    table_id: "validated_data"
+    credentials_path: "config/bigquery_credentials.json"
+    
+# Logging Configuration
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/pipeline.log"

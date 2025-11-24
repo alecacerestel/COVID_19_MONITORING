@@ -1,0 +1,92 @@
+name: COVID-19 Data Quality Pipeline
+
+on:
+  schedule:
+    # Run daily at 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  data-quality-pipeline:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Create necessary directories
+      run: |
+        mkdir -p data/raw data/validated data/quarantine logs
+        
+    - name: Set up environment variables
+      run: |
+        echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> $GITHUB_ENV
+        echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_ENV
+        
+    - name: Initialize Great Expectations
+      run: |
+        python scripts/setup_great_expectations.py
+      continue-on-error: true
+      
+    - name: Download COVID-19 data
+      run: |
+        python scripts/data_ingestion.py
+        
+    - name: Define expectations (if not already defined)
+      run: |
+        python scripts/define_expectations.py
+      continue-on-error: true
+      
+    - name: Run validation pipeline
+      run: |
+        python scripts/validation_pipeline.py --load-to-db
+        
+    - name: Upload validation results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: validation-results
+        path: |
+          logs/
+          gx/uncommitted/data_docs/
+          data/quarantine/
+        retention-days: 30
+        
+    - name: Upload validated data
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: validated-data
+        path: data/validated/
+        retention-days: 7
+        
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'COVID-19 Data Quality Pipeline Failed',
+            body: 'The data quality validation pipeline failed. Please check the logs for details.',
+            labels: ['pipeline-failure', 'data-quality']
+          })

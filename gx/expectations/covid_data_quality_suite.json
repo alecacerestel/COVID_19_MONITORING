@@ -1,0 +1,163 @@
+{
+  "expectations": [
+    {
+      "id": "62c42d0a-ad55-4cb0-9a57-2bede4571266",
+      "kwargs": {
+        "column": "population"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_to_exist"
+    },
+    {
+      "id": "3beec947-d8d0-4540-b2c8-984dd41eccfe",
+      "kwargs": {
+        "column": "iso_code"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "94964bf7-a989-4198-8201-380caee9b26c",
+      "kwargs": {
+        "column": "location"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "5d789e4c-4e8c-4de8-ac03-b19e812cfaa7",
+      "kwargs": {
+        "column": "date"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "2d78d9cb-e982-47c2-b26d-9b3058cf5290",
+      "kwargs": {
+        "column": "population",
+        "mostly": 0.95
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "14959fd9-3473-4e9f-a250-7dc026a87801",
+      "kwargs": {
+        "column": "total_cases",
+        "min_value": 0.0,
+        "mostly": 0.99
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "id": "a8b97dc1-c4ed-4b4c-ae07-1650f134540f",
+      "kwargs": {
+        "column": "new_cases",
+        "min_value": 0.0,
+        "mostly": 0.99
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "id": "10566302-5a5d-47b5-bf31-b9935a319094",
+      "kwargs": {
+        "column": "total_deaths",
+        "min_value": 0.0,
+        "mostly": 0.99
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "id": "6a35b4b9-679d-479c-8bff-d770382004d8",
+      "kwargs": {
+        "column": "new_deaths",
+        "min_value": 0.0,
+        "mostly": 0.99
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "id": "2a95abe0-0dd5-444d-ac7a-e6fff4427e89",
+      "kwargs": {
+        "column": "population",
+        "min_value": 1.0,
+        "mostly": 0.99
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "id": "ee0d0ac3-c32c-4f2a-9776-0ad173fe0730",
+      "kwargs": {
+        "column": "date",
+        "strftime_format": "%Y-%m-%d"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_match_strftime_format"
+    },
+    {
+      "id": "36709bdc-c052-4b05-a750-58a072eefef6",
+      "kwargs": {
+        "column": "iso_code",
+        "mostly": 0.95,
+        "value": 3.0
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_value_lengths_to_equal"
+    },
+    {
+      "id": "7c0f3ca6-aaf8-41de-8c3b-59e919c2a821",
+      "kwargs": {
+        "column": "continent",
+        "mostly": 0.95,
+        "value_set": [
+          "Africa",
+          "Asia",
+          "Europe",
+          "North America",
+          "South America",
+          "Oceania",
+          "Antarctica",
+          null
+        ]
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "id": "f158e75e-236a-4cd1-b20c-7d9cad5ee965",
+      "kwargs": {
+        "column": "new_cases",
+        "max_value": 1000000.0,
+        "min_value": 0.0
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_mean_to_be_between"
+    }
+  ],
+  "id": "91cba321-7e6e-4911-802c-1703efeb5bba",
+  "meta": {
+    "great_expectations_version": "1.9.1"
+  },
+  "name": "covid_data_quality_suite",
+  "notes": null
+}

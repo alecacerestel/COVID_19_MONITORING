@@ -85,9 +85,8 @@ class DataIngestion:
         # Create raw data directory if it doesn't exist
         Path(raw_data_path).mkdir(parents=True, exist_ok=True)
         
-        # Generate filename with timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"covid_data_{timestamp}.csv"
+        # Always save as latest.csv for simplicity
+        filename = "latest.csv"
         filepath = os.path.join(raw_data_path, filename)
         
         self.logger.info(f"Starting download from {url}")
@@ -103,21 +102,6 @@ class DataIngestion:
                     
             file_size = os.path.getsize(filepath)
             self.logger.info(f"Successfully downloaded {file_size:,} bytes to {filepath}")
-            
-            # Create a symlink to latest file for easy access
-            latest_link = os.path.join(raw_data_path, 'latest.csv')
-            if os.path.exists(latest_link):
-                os.remove(latest_link)
-            
-            # On Windows, copy instead of symlink if symlink fails
-            try:
-                os.symlink(filepath, latest_link)
-            except OSError:
-                import shutil
-                shutil.copy2(filepath, latest_link)
-                self.logger.info(f"Created copy at {latest_link} (symlink not available)")
-            else:
-                self.logger.info(f"Created symlink at {latest_link}")
             
             return filepath
             

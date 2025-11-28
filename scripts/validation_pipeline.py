@@ -91,9 +91,16 @@ class ValidationPipeline:
         if filepath is None:
             raw_data_path = self.config['paths']['raw_data']
             filepath = os.path.join(raw_data_path, 'latest.csv')
-            
+        
+        # Check if file exists, if not try to find the most recent csv file
         if not os.path.exists(filepath):
-            raise FileNotFoundError(f"Data file not found at {filepath}")
+            raw_data_path = self.config['paths']['raw_data']
+            csv_files = list(Path(raw_data_path).glob('*.csv'))
+            if csv_files:
+                filepath = str(sorted(csv_files)[-1])
+                self.logger.info(f"Using most recent file: {filepath}")
+            else:
+                raise FileNotFoundError(f"No CSV files found in {raw_data_path}")
             
         self.logger.info(f"Loading data from {filepath}")
         df = pd.read_csv(filepath)

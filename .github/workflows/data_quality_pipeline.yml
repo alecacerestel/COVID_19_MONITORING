@@ -32,6 +32,10 @@ jobs:
           ${{ runner.os }}-pip-
           
     - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        
     - name: Create necessary directories
       run: |
         mkdir -p data/raw data/validated data/quarantine logs

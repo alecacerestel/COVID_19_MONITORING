@@ -119,66 +119,115 @@ class ValidationPipeline:
             dict: Validation results
         """
         suite_name = self.config['validation']['expectation_suite_name']
-        checkpoint_name = self.config['validation']['checkpoint_name']
         
         self.logger.info("Starting data validation...")
         
-        # Create batch request
-        batch_request = RuntimeBatchRequest(
-            datasource_name="covid_data_source",
-            data_connector_name="default_runtime_data_connector",
-            data_asset_name="covid_data",
-            runtime_parameters={"batch_data": df},
-            batch_identifiers={
-                "default_identifier_name": f"covid_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            }
-        )
-        
-        # Run checkpoint
         try:
-            checkpoint = self.context.get_checkpoint(checkpoint_name)
-        except Exception:
-            self.logger.error(f"Checkpoint '{checkpoint_name}' not found. Run setup first.")
-            raise
+            # Get the datasource and expectation suite
+            datasource = self.context.get_datasource("covid_data_source")
+            suite = self.context.get_expectation_suite(suite_name)
             
-        results = checkpoint.run(
-            validations=[
-                {
-                    "batch_request": batch_request,
-                    "expectation_suite_name": suite_name
-                }
-            ]
-        )
+            # Create a batch from dataframe
+            batch_request = datasource.get_asset("covid_data").build_batch_request(dataframe=df)
+            
+            # Validate using the modern API
+            validation_results = self.context.run_validation_operator(
+                "action_list_operator",
+                assets_to_validate=[batch_request],
+                expectation_suite_name=suite_name
+            )
+            
+            # Extract first validation result
+            validation_result_id = list(validation_results.list_validation_result_identifiers())[0]
+            validation_result = validation_results.list_validation_results()[0]
+            
+            success = validation_result.success
+            
+            self.logger.info(f"Validation {'PASSED' if success else 'FAILED'}")
+            
+            return {
+                'success': success,
+                'results': validation_results,
+                'validation_result': validation_result,
+                'statistics': validation_result.statistics if hasattr(validation_result, 'statistics') else {}
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Validation failed with error: {e}")
+            # Fallback to simple validation
+            return self._simple_validate(df, suite_name)
+    
+    def _simple_validate(self, df, suite_name):
+        """
+        Simple validation fallback using direct validator.
         
-        # Extract validation results
-        validation_result = list(results.run_results.values())[0]
-        success = validation_result['validation_result']['success']
-        
-        self.logger.info(f"Validation {'PASSED' if success else 'FAILED'}")
-        
-        return {
-            'success': success,
-            'results': results,
-            'validation_result': validation_result['validation_result'],
-            'statistics': validation_result['validation_result'].get('statistics', {})
-        }
+        Args:
+            df (pandas.DataFrame): Data to validate
+            suite_name (str): Expectation suite name
+            
+        Returns:
+            dict: Validation results
+        """
+        try:
+            suite = self.context.get_expectation_suite(suite_name)
+            validator = self.context.get_validator(
+                batch_request=self.context.get_datasource("covid_data_source").get_asset("covid_data").build_batch_request(dataframe=df),
+                expectation_suite_name=suite_name
+            )
+            
+            results = validator.validate()
+            success = results.success
+            
+            self.logger.info(f"Simple validation {'PASSED' if success else 'FAILED'}")
+            
+            return {
+                'success': success,
+                'results': None,
+                'validation_result': results,
+                'statistics': results.statistics if hasattr(results, 'statistics') else {}
+            }
+        except Exception as e:
+            self.logger.error(f"Simple validation also failed: {e}")
+            # Return a default failure response
+            return {
+                'success': False,
+                'results': None,
+                'validation_result': None,
+                'statistics': {},
+                'error': str(e)
+            }
         
     def extract_failed_expectations(self, validation_result):
         """
         Extract descriptions of failed expectations.
         
         Args:
-            validation_result (dict): Validation result from Great Expectations
+            validation_result: Validation result from Great Expectations
             
         Returns:
             list: List of failed expectation descriptions
         """
         failed = []
         
-        for result in validation_result.get('results', []):
-            if not result.get('success', True):
-                expectation_type = result.get('expectation_config', {}).get('expectation_type', 'unknown')
-                kwargs = result.get('expectation_config', {}).get('kwargs', {})
+        # Handle both dict and object types
+        if validation_result is None:
+            return failed
+            
+        results = []
+        if hasattr(validation_result, 'results'):
+            results = validation_result.results
+        elif isinstance(validation_result, dict) and 'results' in validation_result:
+            results = validation_result['results']
+        
+        for result in results:
+            success = result.get('success', True) if isinstance(result, dict) else getattr(result, 'success', True)
+            if not success:
+                if isinstance(result, dict):
+                    expectation_type = result.get('expectation_config', {}).get('expectation_type', 'unknown')
+                    kwargs = result.get('expectation_config', {}).get('kwargs', {})
+                else:
+                    expectation_type = getattr(result.expectation_config, 'expectation_type', 'unknown') if hasattr(result, 'expectation_config') else 'unknown'
+                    kwargs = getattr(result.expectation_config, 'kwargs', {}) if hasattr(result, 'expectation_config') else {}
                 
                 # Format description
                 description = f"{expectation_type}"

@@ -40,34 +40,14 @@ jobs:
       run: |
         mkdir -p data/raw data/validated data/quarantine logs
         
-    - name: Initialize Great Expectations
-      run: |
-        python scripts/init_gx_project.py
-      continue-on-error: true
-        
-    - name: Set up Great Expectations
-      run: |
-        python scripts/setup_great_expectations.py
-      continue-on-error: true
-      
     - name: Download COVID-19 data
       run: |
         python scripts/data_ingestion.py
         
-    - name: Define expectations
+    - name: Run simple validation
       run: |
-        python scripts/define_expectations.py
-      continue-on-error: true
+        python scripts/simple_validation.py
       
-    - name: Run validation pipeline
-      run: |
-        python scripts/validation_pipeline.py --no-alerts
-      continue-on-error: true
-      
-    - name: Run validation pipeline
-      run: |
-        python scripts/validation_pipeline.py --load-to-db
-        
     - name: Upload validation results
       if: always()
       uses: actions/upload-artifact@v4
@@ -75,8 +55,7 @@ jobs:
         name: validation-results
         path: |
           logs/
-          gx/uncommitted/data_docs/
-          data/quarantine/
+          data/validated/
         retention-days: 30
         
     - name: Upload validated data
